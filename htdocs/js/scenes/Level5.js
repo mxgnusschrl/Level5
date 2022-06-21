@@ -139,10 +139,10 @@ export default class Level5 extends Phaser.Scene {
         const spritesheet5 = this.map.addTilesetImage("spritesheet alienmap 128x128", "spritesheet5");
         const spritesheet_objects = this.map.addTilesetImage("spritesheet_objects", "spritesheet_objects");
         const base = this.map.createLayer("boden", spritesheet5).setDepth(-1);
-        // const lethal_blocks = this.map.createLayer("lethal blocks", spritesheet5).setDepth(-1)
+        const lethal_blocks = this.map.createLayer("lethal blocks", spritesheet5).setDepth(-1);
         // const deko = this.map.createLayer("deko", spritesheet_objects).setDepth(-1)
         let objectlayer = this.map.getObjectLayer("objects");
-        let spawnpoint = objectlayer.objects.find(o => o.type == "spawnpoint");
+        this.spawnpoint = objectlayer.objects.find(o => o.type == "spawnpoint");
         let collectables = this.map.getObjectLayer("collectables");
         let coins = collectables.objects.find(o => o.type == "coins");
         let hearts = collectables.objects.find(o => o.type == "hearts");
@@ -154,7 +154,7 @@ export default class Level5 extends Phaser.Scene {
                 gid: 326,
                 key: "hearts"
             }]);
-        this.player = this.physics.add.sprite(spawnpoint.x, spawnpoint.y, "player").setOrigin(0.5, 1)
+        this.player = this.physics.add.sprite(this.spawnpoint.x, this.spawnpoint.y, "player").setOrigin(0.5, 1)
             .setScale(2.5).refreshBody();
         this.player.body.bounce.y = 0.2;
         this.cameras.main.startFollow(this.player, true, 0.5, 0.5, 0.5, 0.5);
@@ -165,7 +165,11 @@ export default class Level5 extends Phaser.Scene {
             collectable.body.setAllowGravity(false);
             this.physics.add.overlap(this.player, collectable, this.collect, null, this);
         });
+        lethal_blocks.setCollisionByProperty({
+            collides: true
+        });
         this.physics.add.collider(base, collectableslayer, null, null, this);
+        this.physics.add.collider(lethal_blocks, this.player, () => this.damage(), null, this);
         this.physics.world.setBounds(0, 0, this.map.width, this.map.height, false, false, true, true);
         this.physics.add.collider(this.player, base);
         base.setCollisionByProperty({
@@ -184,7 +188,25 @@ export default class Level5 extends Phaser.Scene {
             this.heartscounter = 2;
         }
     }
+    damage() {
+        if (this.heartscounter == 2) {
+            this.heartscounter = 1;
+            this.player.setX(this.spawnpoint.x);
+            this.player.setY(this.spawnpoint.y);
+            this.Distancecounter = 0;
+            this.hearts.setFrame(0);
+        }
+        else {
+            this.die();
+        }
+    }
+    die() {
+        this.scene.start("Leveloverview");
+    }
     update() {
+        if (this.Distancecounter > 150) {
+            this.scene.start("Leveloverview");
+        }
         this.jumpcounter++;
         if (!this.cursors) {
             return;
@@ -243,6 +265,9 @@ export default class Level5 extends Phaser.Scene {
         for (let i = 0; i < this.paralaxbackgrounds.length; ++i) {
             const pbg = this.paralaxbackgrounds[i];
             pbg.sprite.tilePositionX = this.cameras.main.scrollX * pbg.ratioX;
+        }
+        if (this.player.y > this.map.heightInPixels - 50) {
+            this.damage();
         }
     }
 }

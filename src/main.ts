@@ -28,7 +28,7 @@ const config: Phaser.Types.Core.GameConfig = {
 			}
 		}
 	},
-	scene: [Level5, Tutorial, Level1, Level2, Level3, Level4, Startscreen, Leveloverview]
+	scene: [Level5,Tutorial,  Level1, Level2, Level3, Level4, Startscreen, Leveloverview]
 }
 
 export default new Phaser.Game(config)

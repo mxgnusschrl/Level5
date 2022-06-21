@@ -1,3 +1,5 @@
+import { flattenDiagnosticMessageText } from "../../node_modules/typescript/lib/typescript";
+
 export default class Level5 extends Phaser.Scene {
 
     Coinszahl: Phaser.GameObjects.Text;
@@ -23,6 +25,7 @@ export default class Level5 extends Phaser.Scene {
     map:  Phaser.Tilemaps.Tilemap;
     hasjumped;
     jumpcounter;
+    spawnpoint;
 
     private paralaxbackgrounds: {ratioX: number, sprite: Phaser.GameObjects.TileSprite} [] = []
 
@@ -247,12 +250,12 @@ export default class Level5 extends Phaser.Scene {
 
         
         const base = this.map.createLayer("boden", spritesheet5).setDepth(-1)
-        // const lethal_blocks = this.map.createLayer("lethal blocks", spritesheet5).setDepth(-1)
+        const lethal_blocks = this.map.createLayer("lethal blocks", spritesheet5).setDepth(-1)
         // const deko = this.map.createLayer("deko", spritesheet_objects).setDepth(-1)
         
 
         let objectlayer = this.map.getObjectLayer("objects");
-        let spawnpoint = objectlayer.objects.find(o => o.type == "spawnpoint");
+        this.spawnpoint = objectlayer.objects.find(o => o.type == "spawnpoint");
         
         let collectables = this.map.getObjectLayer("collectables");
         let coins = collectables.objects.find(o => o.type == "coins");
@@ -267,7 +270,7 @@ export default class Level5 extends Phaser.Scene {
             key: "hearts"
         }])
         
-        this.player = this.physics.add.sprite(spawnpoint.x, spawnpoint.y, "player").setOrigin(0.5, 1)
+        this.player = this.physics.add.sprite(this.spawnpoint.x, this.spawnpoint.y, "player").setOrigin(0.5, 1)
         .setScale(2.5).refreshBody()
         this.player.body.bounce.y = 0.2;
         this.cameras.main.startFollow(this.player,true, 0.5, 0.5, 0.5, 0.5)
@@ -279,8 +282,7 @@ export default class Level5 extends Phaser.Scene {
             
             this.physics.add.overlap(this.player, collectable, this.collect, null, this)
         })
-        
-        
+       
         
    
 
@@ -288,8 +290,12 @@ export default class Level5 extends Phaser.Scene {
         
 
          
+        lethal_blocks.setCollisionByProperty({
+            collides:true
+        })
 
         this.physics.add.collider(base, collectableslayer, null, null, this)
+        this.physics.add.collider(lethal_blocks,this.player,()=>this.damage(),null,this)
 
 
 
@@ -324,12 +330,29 @@ export default class Level5 extends Phaser.Scene {
 
 
     } 
+    damage(){
+if(this.heartscounter==2){
+    this.heartscounter=1
+    this.player.setX(this.spawnpoint.x)
+    this.player.setY(this.spawnpoint.y)
+    this.Distancecounter=0
+    this.hearts.setFrame(0)
+}else{
+this.die()
+}
+    }
+    die(){
+        this.scene.start("Leveloverview");
+    }
     
 
     update() {
 
 
-   
+        if(this.Distancecounter>150){
+            this.scene.start("Leveloverview")
+        }
+    
 
         this.jumpcounter++;
 
@@ -418,8 +441,11 @@ export default class Level5 extends Phaser.Scene {
 
             pbg.sprite.tilePositionX = this.cameras.main.scrollX * pbg.ratioX
         }
+        if(this.player.y>this.map.heightInPixels-50){   
+        this.damage()
+        }
+        
 
 
-
-}
+    }
 }
